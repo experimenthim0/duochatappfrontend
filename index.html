@@ -26,6 +26,7 @@
       <h1 class="text-white text-3xl text-center pt-2 font-bold">Duo Chat</h1>
 
       <p class="text-gray-400 text-center text-[14px]">⚠️ All messages will be deleted when you leave this page</p>
+       <p class="text-gray-400 text-center text-[14px]" id="usercount"> </p>
       <div class="px-10 relative flex flex-row items-center justify-center">
         <div
           id="messages"
@@ -72,7 +73,7 @@
     const socket = io("https://duochatbackend.onrender.com");
     const sendBtn = document.getElementById("sendBtn");
     const message = document.getElementById("message");
- 
+ const userCountmsg = document.getElementById("usercount");
     const badWords = ["BC","MC","C","LC","MKC","BKC","SC","BSDK","GND","LND","KTA","KTI","PKC",
     ];
     const emojis= ["😂","😍","😊","😢","😎","👍","🙏","🎉","🔥"];
@@ -162,6 +163,16 @@
 
 socket.on("chatMessage", (msg) => {
       addMessage(msg);
+    });
+
+    socket.on('errorMsg', (msg) => {
+  // alert(msg); // Shows a popup: "The chat is full..."
+  document.body.innerHTML = `<div class="bg-black h-screen flex items-center justify-center text-white text-xl p-5 text-center">
+    ${msg}
+  </div>`;
+});
+    socket.on('userCountmsg', (userCount) => {
+      userCountmsg.textContent = `Users Online: ${userCount}`;
     });
 
     </script>

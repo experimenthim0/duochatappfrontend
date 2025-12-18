@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Duo Chat</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.css"
+      integrity="sha512-kJlvECunwXftkPwyvHbclArO8wszgBGisiLeuDFwNM8ws+wKIw0sv1os3ClWZOcrEB2eRXULYUsm8OVRGJKwGA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div class="bg-black w-screen h-screen">
+      <h1 class="text-white text-3xl text-center pt-2 font-bold">Duo Chat</h1>
+
+      <p class="text-gray-400 text-center text-[14px]">⚠️ All messages will be deleted when you leave this page</p>
+      <div class="px-10 relative flex flex-row items-center justify-center">
+        <div
+          id="messages"
+          class="mt-3 border-2 border-gray-400 rounded-xl px-4 py-2 w-full h-170 sm:h-140 overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        ></div>
+        <form action="#">
+          <div
+            class="fixed bottom-5 flex gap-3 w-screen sm:w-[90%] left-1/2 transform -translate-x-1/2 justify-center px-2"
+          >
+            <div
+              class="w-full h-10 bg-white text-black rounded-3xl flex items-center px-3 justify-center"
+            >
+            <input type="file" id="uploadImg" hidden/>
+<label for="uploadImg"><i class="fa-solid fa-image text-[20px] cursor-pointer -px-2" ></i></label>
+              <input
+                type="text"
+                class="w-full h-10 bg-white text-black px-3 outline-none rounded-3xl"
+                id="message"
+                placeholder="Enter Your thought"
+              />
+              
+              <i
+                class="fa fa-heart text-pink-600 cursor-pointer text-2xl"
+                onclick="heartMessage()"
+              ></i>
+              <!-- </div> <button class="bg-white h-10 w-20 rounded-3xl hover:bg-gray-300" id="sendBtn" >Send</button> -->
+            </div>
+            <button
+              class="bg-white h-10 w-15 rounded-3xl hover:bg-gray-300 text-center"
+              id="sendBtn" tooltip="Send Message"
+              title="Send Message"
+              aria-label="Send Message"
+            >
+              <i class="ri-send-plane-fill text-2xl"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const sendBtn = document.getElementById("sendBtn");
+    const message = document.getElementById("message");
+ 
+    const badWords = ["BC","MC","C","LC","MKC","BKC","SC","BSDK","GND","LND","KTA","KTI","PKC",
+    ];
+    const emojis= ["😂","😍","😊","😢","😎","👍","🙏","🎉","🔥"];
+
+    const messages = document.getElementById("messages");
+
+
+
+    document.getElementById("uploadImg").addEventListener("change", sendImageMessage);
+
+    // Function to add message to the chat
+    function addMessage(text) {
+      const msg = document.createElement("div");
+
+      
+      
+      msg.textContent = text;
+      
+      if (emojis.includes(text) || text === "❤️") {
+        msg.className =
+        "text-pink-800 rounded break-words max-w-[20%] mb-1 px-1 py-1 text-3xl bg-gray-600 text-center";
+      } 
+      else {
+        // Replace bad words
+         const pattern = new RegExp(`\\b(${badWords.join("|")})\\b`, "gi");
+      text = text.replace(pattern, (match) => "*".repeat(match.length));
+        msg.className =
+          " text-white rounded break-words max-w-[80%] mb-1 px-3 py-1 ";
+      }
+
+      messages.appendChild(msg);
+
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function sendImageMessage(image) {
+     const fileInput= document.getElementById("uploadImg");
+     const file= fileInput.files[0];
+
+     if(!file) {
+      return;
+     }
+      const reader= new FileReader();
+
+      reader.onload=()=>{
+        socket.emit('imageMessage', {image:reader.result});
+      }
+      reader.readAsDataURL(file);
+      fileInput.value="";
+    }
+    
+
+
+    
+    function heartMessage() {
+      const heart = "❤️";
+      socket.emit("chatMessage", heart);
+      
+    }
+
+    // Send image on file selection
+   socket.on("imageMessage", (data) => {
+  const img = document.createElement("img");
+  img.src = data.image;
+  img.className = "max-w-[200px] rounded my-2";
+
+  messages.appendChild(img);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+
+
+
+    
+    // Send message on button click
+    sendBtn.addEventListener("click", (e) => {
+      const msg = message.value;
+      e.preventDefault();
+      console.log(msg);
+      if (msg.trim() === "") {
+        return;
+      }
+      
+      socket.emit("chatMessage", msg);
+      message.value = "";
+    });
+
+socket.on("chatMessage", (msg) => {
+      addMessage(msg);
+    });
+
+    </script>
+</html>
